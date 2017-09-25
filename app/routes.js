@@ -52,6 +52,32 @@ module.exports = function(app, passport, fs, now) {
         res.render('login.ejs', { message: req.flash('loginMessage') });
     });
 
+    app.get('/mlogin', function(req, res) {
+
+        // render the page and pass in any flash data if it exists
+        res.send("Wrong email or password!!!")
+    });
+
+    app.get('/mprofile', isLoggedIn, function(req, res) {
+        if(!fs.existsSync(__dirname +'/download/' +req.user._id)){
+            fs.mkdirSync(__dirname +'/download/' +req.user._id);
+            console.log("create");
+        }
+        fs.readdir(__dirname+'/download/'+req.user._id, function (err, files) {
+            if (err) return console.error(err)
+			res.writeHead(200, {'Content-Type': 'application/json'});
+			var myObj = {
+				username: req.user.local.email,
+				files: files				
+			};
+			res.end(JSON.stringify(myObj));
+        });
+    });
+
+
+
+
+
     // process the login form
     // app.post('/login', do all our passport stuff here);
 
@@ -91,12 +117,23 @@ module.exports = function(app, passport, fs, now) {
         failureRedirect : '/login', // redirect back to the signup page if there is an error
         failureFlash : true // allow flash messages
     }));
+
+    app.post('/mlogin', passport.authenticate('local-login', {
+        successRedirect : '/mprofile', // redirect to the secure profile section
+          failureRedirect : '/mlogin', // redirect back to the signup page if there is an error
+            failureFlash : true // allow flash messages
+        }));
+
+
 };
+
+
+
 
 // route middleware to make sure a user is logged in
 function isLoggedIn(req, res, next) {
 
-    // if user is authenticated in the session, carry on 
+    // if user is authenticated in the session, carry on
     if (req.isAuthenticated())
         return next();
 
@@ -128,4 +165,3 @@ function download_file(req,res,fs, now) {
 function time(now){
     return now.getFullYear()+"_"+(now.getMonth()+1)+"_"+now.getDate()+"_"+now.getHours()+"_"+now.getMinutes()+"_"+now.getSeconds()+"_";
 }
-
